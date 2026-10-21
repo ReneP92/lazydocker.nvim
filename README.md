@@ -6,6 +6,8 @@ Open [LazyDocker](https://github.com/jesseduffield/lazydocker) in a floating Neo
 
 Inspired by [lazygit.nvim](https://github.com/kdheepak/lazygit.nvim). Written in Lua using Neovim's native terminal and floating-window APIs, with no plugin dependencies.
 
+![LazyDocker running in a floating Neovim terminal, showing Docker containers and resource usage](doc/picture.png)
+
 ## Features
 
 - `:LazyDocker` opens or focuses the terminal.
