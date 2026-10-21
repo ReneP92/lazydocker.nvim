@@ -352,7 +352,8 @@ H.test("help tags generate and the public API documentation is discoverable", fu
   local runtime = H.tempdir()
   vim.fn.mkdir(runtime .. "/doc", "p")
   vim.fn.writefile(vim.fn.readfile(H.root .. "/doc/lazydocker.txt"), runtime .. "/doc/lazydocker.txt")
-  vim.cmd.helptags(vim.fn.fnameescape(runtime .. "/doc"))
+  -- Pass one path argument; fnameescape() is for Ex command strings.
+  vim.cmd.helptags(runtime .. "/doc")
   vim.opt.runtimepath:append(runtime)
   H.resources[#H.resources + 1] = function()
     vim.opt.runtimepath:remove(runtime)
