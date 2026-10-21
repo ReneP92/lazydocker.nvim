@@ -1,0 +1,170 @@
+*lazydocker.txt*  Open LazyDocker in a floating Neovim terminal
+*lazydocker.nvim*
+
+==============================================================================
+CONTENTS                                                   *lazydocker-contents*
+
+    Requirements ................................ |lazydocker-requirements|
+    Commands .................................... |lazydocker-commands|
+    Configuration ............................... |lazydocker-setup|
+    Lua API ..................................... |lazydocker-api|
+    Highlights .................................. |lazydocker-highlights|
+    Troubleshooting ............................. |lazydocker-troubleshooting|
+
+==============================================================================
+REQUIREMENTS                                           *lazydocker-requirements*
+
+Neovim 0.11+, the LazyDocker executable, and a reachable Docker daemon compatible
+with your installed LazyDocker. Docker Compose is needed for Compose features.
+No other Neovim plugins are required. Setup is optional.
+
+Install LazyDocker: https://github.com/jesseduffield/lazydocker#installation
+
+==============================================================================
+COMMANDS                                                   *lazydocker-commands*
+
+:LazyDocker                                                       *:LazyDocker*
+    Open or focus the LazyDocker terminal and enter Terminal-mode.
+
+:LazyDockerToggle                                           *:LazyDockerToggle*
+    Hide the visible terminal, or open/restore it if hidden.
+
+Both commands take no arguments. Use the Lua API for a working-directory
+override. There is one session per Neovim instance, shared across tabs.
+
+LazyDocker receives its normal keys, including q to quit and Escape to dismiss
+dialogs. No running-terminal mappings are installed by the plugin.
+
+Press <C-\><C-n> to enter Terminal-Normal mode. :close hides the floating window
+without stopping the process. :LazyDocker restores it. See |terminal-input|.
+
+To map a toggle in both normal and terminal modes: >lua
+    vim.keymap.set({ "n", "t" }, "<C-g>", function()
+      require("lazydocker").toggle()
+    end, { desc = "Toggle LazyDocker" })
+<
+Successful exits close the terminal and restore editor focus. After a nonzero
+exit, output remains available in normal mode; q closes it and :LazyDocker
+retries. Deleting the terminal buffer stops the process. Neovim shutdown also
+stops a hidden session.
+
+==============================================================================
+CONFIGURATION                                                 *lazydocker-setup*
+
+With lazy.nvim, put overrides in the plugin spec's opts table. Otherwise: >lua
+    require("lazydocker").setup({
+      command = "lazydocker",
+      args = {},
+      window = {
+        width = 0.9,
+        height = 0.9,
+        border = "rounded",
+        winblend = 0,
+      },
+    })
+<
+command ~
+    Executable name or absolute path. Arguments belong in args, not here.
+    Default: "lazydocker".
+
+args ~
+    List of argument strings, passed directly without a shell. Paths containing
+    spaces need no shell quoting. Example: { "-f", "compose.dev.yml" }.
+    Default: {}.
+
+window.width, window.height ~
+    Fractions of the available editor dimensions, in (0, 1]. Space for the
+    border and command line is accounted for. Default: 0.9 each.
+
+window.border ~
+    One of "none", "single", "double", "rounded", "solid", "shadow".
+    Default: "rounded". See |nvim_open_win()|.
+
+window.winblend ~
+    Integer transparency from 0 to 100. Default: 0 (opaque). See 'winblend'.
+
+The window is centered and follows editor resize events. On very small grids,
+the title or border is omitted to fit the available space.
+
+Each setup call merges options with the defaults, not with previous setup
+calls. Invalid options raise an error. A running session keeps the configuration
+and working directory used at launch; changes apply to the next new session.
+
+==============================================================================
+LUA API                                                         *lazydocker-api*
+
+require("lazydocker").setup({opts})                           *lazydocker.setup()*
+    Configure new sessions. {opts} is optional; see |lazydocker-setup|.
+    Returns nothing.
+
+require("lazydocker").open({opts})                             *lazydocker.open()*
+    Open or focus the terminal. {opts} is an optional table: >lua
+        require("lazydocker").open({ cwd = "/path/to/project" })
+<
+    cwd is an optional non-empty directory string, absolute or relative to
+    Neovim's current directory. A leading ~ is expanded. By default the plugin
+    uses getcwd(), respecting :lcd and :tcd. It does not change Neovim's cwd.
+
+    Options apply only when starting a new process. An existing session keeps
+    its original cwd. Quit LazyDocker or call close() before changing it.
+
+    Returns true on success, false on launch error, with an error notification.
+
+require("lazydocker").toggle({opts})                         *lazydocker.toggle()*
+    Hide the visible window, otherwise call open(). Same options and return
+    convention as open().
+
+require("lazydocker").hide()                                   *lazydocker.hide()*
+    Hide the floating window, keeping the process and buffer alive.
+    Returns true if a window was hidden, otherwise false.
+
+require("lazydocker").close()                                 *lazydocker.close()*
+    Stop the session and delete its window and buffer.
+    Returns true if a session was closed, otherwise false.
+
+LazyDocker inherits the environment, including Docker context-related variables
+such as DOCKER_HOST. The launch directory controls Compose discovery; the
+plugin does not search for a project root. LazyDocker's own configuration files
+are used normally.
+
+==============================================================================
+HIGHLIGHTS                                               *lazydocker-highlights*
+
+LazyDockerFloat ~
+    Terminal background and foreground. Default link: NormalFloat.
+
+LazyDockerBorder ~
+    Floating-window border. Default link: FloatBorder.
+
+Set overrides using nvim_set_hl(). Defaults are restored on ColorScheme when no
+override is present. LazyDocker's own theme controls colors it draws itself.
+
+==============================================================================
+TROUBLESHOOTING                                     *lazydocker-troubleshooting*
+
+:checkhealth lazydocker checks Neovim, the configured executable, and the Docker
+CLI. Check Docker daemon connectivity separately with docker info.
+
+Executable not found:
+    Check :echo executable('lazydocker'). A GUI may have a different PATH than
+    your shell. Configure command with the full executable path. Shell aliases
+    are not executable names.
+
+Docker connection problems:
+    Start the daemon and check the active Docker context and environment.
+    Try LazyDocker directly in the same directory and environment.
+
+Missing Compose services:
+    Check :pwd. Launch a fresh session in the Compose directory or pass an
+    explicit Compose file through args.
+
+Keyboard input goes to Neovim:
+    Press i to enter Terminal-mode. Review global terminal mappings that may
+    intercept LazyDocker's input.
+
+Nonzero exit:
+    Read the retained terminal output. Press q to close it, or :LazyDocker to
+    start a fresh process.
+
+==============================================================================
+vim:tw=78:ts=8:noet:ft=help:norl:
